@@ -36,7 +36,7 @@ export function Sidebar() {
         {!collapsed && (
           <Link href="/dashboard" className="flex items-center gap-2">
             <Megaphone className="h-6 w-6 text-primary" />
-            <span className="text-lg font-semibold">CampaignMgr</span>
+            <span className="text-lg font-semibold font-heading">CampaignMgr</span>
           </Link>
         )}
         {collapsed && (

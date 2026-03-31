@@ -1,10 +1,16 @@
+export type LifecycleStage = "lead" | "prospect" | "customer" | "churned";
+export type CampaignType = "email" | "sms";
+export type CampaignStatus = "draft" | "active" | "completed";
+export type FilterField = "lifecycleStage" | "tags" | "company" | "name" | "email";
+export type FilterOperator = "equals" | "contains" | "not_equals";
+
 export interface Contact {
   id: string;
   name: string;
   email: string;
   phone: string | null;
   company: string | null;
-  lifecycleStage: string;
+  lifecycleStage: LifecycleStage;
   tags: string[];
   createdAt: string;
   updatedAt: string;
@@ -21,16 +27,16 @@ export interface Segment {
 }
 
 export interface SegmentFilter {
-  field: string;
-  operator: string;
+  field: FilterField;
+  operator: FilterOperator;
   value: string;
 }
 
 export interface Campaign {
   id: string;
   name: string;
-  type: string;
-  status: string;
+  type: CampaignType;
+  status: CampaignStatus;
   subject: string | null;
   body: string | null;
   segmentId: string | null;

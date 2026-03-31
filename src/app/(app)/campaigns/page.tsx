@@ -30,10 +30,16 @@ export default function CampaignsPage() {
   const [loading, setLoading] = useState(true);
 
   async function fetchCampaigns() {
-    const res = await fetch("/api/campaigns");
-    const data = await res.json();
-    setCampaigns(data);
-    setLoading(false);
+    try {
+      const res = await fetch("/api/campaigns");
+      if (!res.ok) throw new Error("Failed to fetch");
+      const data = await res.json();
+      setCampaigns(data);
+    } catch {
+      toast.error("Failed to load campaigns");
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => {

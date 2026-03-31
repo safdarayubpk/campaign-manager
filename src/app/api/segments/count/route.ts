@@ -1,38 +1,25 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { buildWhereClause, filterSchema } from "@/lib/segment-filters";
+
+const countSchema = z.object({
+  filters: z.array(filterSchema).min(1),
+});
 
 export async function POST(request: NextRequest) {
   try {
-    const { filters } = await request.json();
+    const body = await request.json();
+    const { filters } = countSchema.parse(body);
 
-    const conditions: Record<string, unknown>[] = [];
-    for (const filter of filters) {
-      if (filter.field === "lifecycleStage") {
-        if (filter.operator === "equals") {
-          conditions.push({ lifecycleStage: filter.value });
-        } else if (filter.operator === "not_equals") {
-          conditions.push({ lifecycleStage: { not: filter.value } });
-        }
-      } else if (filter.field === "tags") {
-        conditions.push({ tags: { contains: filter.value } });
-      } else if (filter.field === "company") {
-        if (filter.operator === "equals") {
-          conditions.push({ company: filter.value });
-        } else {
-          conditions.push({ company: { contains: filter.value } });
-        }
-      } else if (filter.field === "name") {
-        conditions.push({ name: { contains: filter.value } });
-      } else if (filter.field === "email") {
-        conditions.push({ email: { contains: filter.value } });
-      }
-    }
-
-    const where = conditions.length > 0 ? { AND: conditions } : {};
+    const where = buildWhereClause(filters);
     const count = await prisma.contact.count({ where });
 
     return NextResponse.json({ count });
-  } catch {
-    return NextResponse.json({ count: 0 });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: "Invalid filters", count: 0 }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Failed to count contacts", count: 0 }, { status: 500 });
   }
 }

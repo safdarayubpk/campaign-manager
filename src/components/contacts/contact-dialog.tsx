@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -35,15 +35,28 @@ export function ContactDialog({
 }: ContactDialogProps) {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
-    name: contact?.name ?? "",
-    email: contact?.email ?? "",
-    phone: contact?.phone ?? "",
-    company: contact?.company ?? "",
-    lifecycleStage: contact?.lifecycleStage ?? "lead",
-    tags: contact?.tags?.join(", ") ?? "",
+    name: "",
+    email: "",
+    phone: "",
+    company: "",
+    lifecycleStage: "lead",
+    tags: "",
   });
 
   const isEdit = !!contact;
+
+  useEffect(() => {
+    if (open) {
+      setForm({
+        name: contact?.name ?? "",
+        email: contact?.email ?? "",
+        phone: contact?.phone ?? "",
+        company: contact?.company ?? "",
+        lifecycleStage: contact?.lifecycleStage ?? "lead",
+        tags: contact?.tags?.join(", ") ?? "",
+      });
+    }
+  }, [open, contact]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

@@ -12,12 +12,16 @@ const campaignSchema = z.object({
 });
 
 export async function GET() {
-  const campaigns = await prisma.campaign.findMany({
-    orderBy: { createdAt: "desc" },
-    include: { segment: { select: { id: true, name: true, contactCount: true } } },
-  });
+  try {
+    const campaigns = await prisma.campaign.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { segment: { select: { id: true, name: true, contactCount: true } } },
+    });
 
-  return NextResponse.json(campaigns);
+    return NextResponse.json(campaigns);
+  } catch {
+    return NextResponse.json({ error: "Failed to fetch campaigns" }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {

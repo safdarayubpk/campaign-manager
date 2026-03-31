@@ -15,9 +15,9 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Users, Save } from "lucide-react";
 import { toast } from "sonner";
-import type { Segment, SegmentFilter } from "@/lib/types";
+import type { Segment, SegmentFilter, FilterField, FilterOperator } from "@/lib/types";
 
-const fieldOptions = [
+const fieldOptions: { value: FilterField; label: string }[] = [
   { value: "lifecycleStage", label: "Lifecycle Stage" },
   { value: "tags", label: "Tags" },
   { value: "company", label: "Company" },
@@ -25,7 +25,7 @@ const fieldOptions = [
   { value: "email", label: "Email" },
 ];
 
-const operatorsByField: Record<string, { value: string; label: string }[]> = {
+const operatorsByField: Record<FilterField, { value: FilterOperator; label: string }[]> = {
   lifecycleStage: [
     { value: "equals", label: "Equals" },
     { value: "not_equals", label: "Not Equals" },
@@ -41,6 +41,18 @@ const operatorsByField: Record<string, { value: string; label: string }[]> = {
 
 const stageValues = ["lead", "prospect", "customer", "churned"];
 
+type FilterWithId = SegmentFilter & { _id: string };
+
+function createFilter(overrides?: Partial<SegmentFilter>): FilterWithId {
+  return {
+    _id: crypto.randomUUID(),
+    field: "lifecycleStage",
+    operator: "equals",
+    value: "lead",
+    ...overrides,
+  };
+}
+
 interface SegmentBuilderProps {
   onSaved: () => void;
 }
@@ -48,9 +60,7 @@ interface SegmentBuilderProps {
 export function SegmentBuilder({ onSaved }: SegmentBuilderProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [filters, setFilters] = useState<SegmentFilter[]>([
-    { field: "lifecycleStage", operator: "equals", value: "lead" },
-  ]);
+  const [filters, setFilters] = useState<FilterWithId[]>([createFilter()]);
   const [previewCount, setPreviewCount] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -60,13 +70,20 @@ export function SegmentBuilder({ onSaved }: SegmentBuilderProps) {
       setPreviewCount(null);
       return;
     }
-    const res = await fetch("/api/segments/count", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ filters: validFilters }),
-    });
-    const data = await res.json();
-    setPreviewCount(data.count);
+    try {
+      const res = await fetch("/api/segments/count", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filters: validFilters.map(({ field, operator, value }) => ({ field, operator, value })),
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to fetch");
+      const data = await res.json();
+      setPreviewCount(data.count);
+    } catch {
+      setPreviewCount(null);
+    }
   }, [filters]);
 
   useEffect(() => {
@@ -75,20 +92,19 @@ export function SegmentBuilder({ onSaved }: SegmentBuilderProps) {
   }, [fetchPreview]);
 
   function addRule() {
-    setFilters([...filters, { field: "lifecycleStage", operator: "equals", value: "" }]);
+    setFilters([...filters, createFilter({ value: "" })]);
   }
 
-  function removeRule(index: number) {
+  function removeRule(id: string) {
     if (filters.length <= 1) return;
-    setFilters(filters.filter((_, i) => i !== index));
+    setFilters(filters.filter((f) => f._id !== id));
   }
 
-  function updateRule(index: number, updates: Partial<SegmentFilter>) {
+  function updateRule(id: string, updates: Partial<SegmentFilter>) {
     setFilters(
-      filters.map((f, i) => {
-        if (i !== index) return f;
+      filters.map((f) => {
+        if (f._id !== id) return f;
         const updated = { ...f, ...updates };
-        // Reset operator and value when field changes
         if (updates.field && updates.field !== f.field) {
           const ops = operatorsByField[updates.field];
           updated.operator = ops?.[0]?.value ?? "equals";
@@ -115,13 +131,17 @@ export function SegmentBuilder({ onSaved }: SegmentBuilderProps) {
       const res = await fetch("/api/segments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, description: description || null, filters: validFilters }),
+        body: JSON.stringify({
+          name,
+          description: description || null,
+          filters: validFilters.map(({ field, operator, value }) => ({ field, operator, value })),
+        }),
       });
       if (!res.ok) throw new Error();
       toast.success("Segment created");
       setName("");
       setDescription("");
-      setFilters([{ field: "lifecycleStage", operator: "equals", value: "lead" }]);
+      setFilters([createFilter()]);
       onSaved();
     } catch {
       toast.error("Failed to create segment");
@@ -160,13 +180,13 @@ export function SegmentBuilder({ onSaved }: SegmentBuilderProps) {
         <div className="space-y-3">
           <Label>Filter Rules (AND logic)</Label>
           {filters.map((filter, index) => (
-            <div key={index} className="flex items-center gap-2">
+            <div key={filter._id} className="flex items-center gap-2">
               {index > 0 && (
                 <Badge variant="secondary" className="shrink-0">AND</Badge>
               )}
               <Select
                 value={filter.field}
-                onValueChange={(v) => updateRule(index, { field: v })}
+                onValueChange={(v) => updateRule(filter._id, { field: v as FilterField })}
               >
                 <SelectTrigger className="w-[150px]">
                   <SelectValue />
@@ -182,7 +202,7 @@ export function SegmentBuilder({ onSaved }: SegmentBuilderProps) {
 
               <Select
                 value={filter.operator}
-                onValueChange={(v) => updateRule(index, { operator: v })}
+                onValueChange={(v) => updateRule(filter._id, { operator: v as FilterOperator })}
               >
                 <SelectTrigger className="w-[140px]">
                   <SelectValue />
@@ -199,7 +219,7 @@ export function SegmentBuilder({ onSaved }: SegmentBuilderProps) {
               {filter.field === "lifecycleStage" ? (
                 <Select
                   value={filter.value}
-                  onValueChange={(v) => updateRule(index, { value: v })}
+                  onValueChange={(v) => updateRule(filter._id, { value: v })}
                 >
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Select..." />
@@ -216,7 +236,7 @@ export function SegmentBuilder({ onSaved }: SegmentBuilderProps) {
                 <Input
                   className="flex-1"
                   value={filter.value}
-                  onChange={(e) => updateRule(index, { value: e.target.value })}
+                  onChange={(e) => updateRule(filter._id, { value: e.target.value })}
                   placeholder="Value..."
                 />
               )}
@@ -225,8 +245,9 @@ export function SegmentBuilder({ onSaved }: SegmentBuilderProps) {
                 variant="ghost"
                 size="sm"
                 className="shrink-0"
-                onClick={() => removeRule(index)}
+                onClick={() => removeRule(filter._id)}
                 disabled={filters.length <= 1}
+                aria-label="Remove filter rule"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -257,7 +278,6 @@ export function SegmentBuilder({ onSaved }: SegmentBuilderProps) {
   );
 }
 
-// Segment List component
 export function SegmentList({ segments }: { segments: Segment[] }) {
   if (segments.length === 0) {
     return (
@@ -285,8 +305,8 @@ export function SegmentList({ segments }: { segments: Segment[] }) {
               <span className="text-sm font-medium">{segment.contactCount} contacts</span>
             </div>
             <div className="flex flex-wrap gap-1">
-              {segment.filters.map((f, i) => (
-                <Badge key={i} variant="outline" className="text-xs">
+              {segment.filters.map((f) => (
+                <Badge key={`${f.field}-${f.operator}-${f.value}`} variant="outline" className="text-xs">
                   {f.field} {f.operator} &quot;{f.value}&quot;
                 </Badge>
               ))}

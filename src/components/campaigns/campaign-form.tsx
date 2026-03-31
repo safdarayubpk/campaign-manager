@@ -41,8 +41,12 @@ export function CampaignForm() {
 
   useEffect(() => {
     fetch("/api/segments")
-      .then((r) => r.json())
-      .then(setSegments);
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to fetch");
+        return r.json();
+      })
+      .then(setSegments)
+      .catch(() => toast.error("Failed to load segments"));
   }, []);
 
   const selectedSegment = segments.find((s) => s.id === form.segmentId);

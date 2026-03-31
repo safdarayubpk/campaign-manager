@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import type { Prisma } from "@/generated/prisma/client";
+
+const SORTABLE_COLUMNS = ["name", "email", "company", "lifecycleStage", "createdAt"] as const;
+const MAX_PAGE_SIZE = 100;
 
 const contactSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -12,56 +16,62 @@ const contactSchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = request.nextUrl;
+  try {
+    const { searchParams } = request.nextUrl;
 
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "10");
-  const search = searchParams.get("search") || "";
-  const stage = searchParams.get("stage") || "";
-  const sortBy = searchParams.get("sortBy") || "createdAt";
-  const sortOrder = (searchParams.get("sortOrder") || "desc") as "asc" | "desc";
-  const tag = searchParams.get("tag") || "";
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1") || 1);
+    const limit = Math.min(MAX_PAGE_SIZE, Math.max(1, parseInt(searchParams.get("limit") || "10") || 10));
+    const search = searchParams.get("search")?.trim().slice(0, 200) || "";
+    const stage = searchParams.get("stage") || "";
+    const sortBy = SORTABLE_COLUMNS.includes(searchParams.get("sortBy") as typeof SORTABLE_COLUMNS[number])
+      ? (searchParams.get("sortBy") as string)
+      : "createdAt";
+    const sortOrder = searchParams.get("sortOrder") === "asc" ? "asc" : "desc";
+    const tag = searchParams.get("tag") || "";
 
-  const where: Record<string, unknown> = {};
+    const where: Prisma.ContactWhereInput = {};
 
-  if (search) {
-    where.OR = [
-      { name: { contains: search } },
-      { email: { contains: search } },
-      { company: { contains: search } },
-    ];
+    if (search) {
+      where.OR = [
+        { name: { contains: search } },
+        { email: { contains: search } },
+        { company: { contains: search } },
+      ];
+    }
+
+    if (stage) {
+      where.lifecycleStage = stage;
+    }
+
+    if (tag) {
+      where.tags = { contains: tag };
+    }
+
+    const [contacts, total] = await Promise.all([
+      prisma.contact.findMany({
+        where,
+        orderBy: { [sortBy]: sortOrder },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.contact.count({ where }),
+    ]);
+
+    return NextResponse.json({
+      contacts: contacts.map((c) => ({
+        ...c,
+        tags: JSON.parse(c.tags),
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } catch {
+    return NextResponse.json({ error: "Failed to fetch contacts" }, { status: 500 });
   }
-
-  if (stage) {
-    where.lifecycleStage = stage;
-  }
-
-  if (tag) {
-    where.tags = { contains: tag };
-  }
-
-  const [contacts, total] = await Promise.all([
-    prisma.contact.findMany({
-      where,
-      orderBy: { [sortBy]: sortOrder },
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    prisma.contact.count({ where }),
-  ]);
-
-  return NextResponse.json({
-    contacts: contacts.map((c) => ({
-      ...c,
-      tags: JSON.parse(c.tags),
-    })),
-    pagination: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit),
-    },
-  });
 }
 
 export async function POST(request: NextRequest) {

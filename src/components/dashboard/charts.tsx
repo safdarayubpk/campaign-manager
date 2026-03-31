@@ -41,7 +41,7 @@ export function ContactsByStageChart({ data }: ContactsByStageProps) {
                   borderRadius: "8px",
                 }}
               />
-              <Bar dataKey="count" fill="hsl(220, 80%, 55%)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="count" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -75,9 +75,9 @@ export function CampaignPerformanceChart({ data }: CampaignPerformanceProps) {
                 }}
               />
               <Legend />
-              <Bar dataKey="sent" fill="hsl(220, 80%, 55%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="opens" fill="hsl(150, 60%, 45%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="clicks" fill="hsl(30, 90%, 55%)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="sent" fill="var(--chart-1)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="opens" fill="var(--chart-2)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="clicks" fill="var(--chart-3)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

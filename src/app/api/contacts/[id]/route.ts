@@ -20,10 +20,10 @@ export async function PUT(
     const body = await request.json();
     const validated = updateSchema.parse(body);
 
-    const data: Record<string, unknown> = { ...validated };
-    if (validated.tags) {
-      data.tags = JSON.stringify(validated.tags);
-    }
+    const data = {
+      ...validated,
+      ...(validated.tags !== undefined && { tags: JSON.stringify(validated.tags) }),
+    };
 
     const contact = await prisma.contact.update({
       where: { id },
@@ -48,6 +48,6 @@ export async function DELETE(
     await prisma.contact.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch {
-    return NextResponse.json({ error: "Failed to delete contact" }, { status: 500 });
+    return NextResponse.json({ error: "Contact not found or already deleted" }, { status: 404 });
   }
 }

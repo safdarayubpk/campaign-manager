@@ -60,11 +60,17 @@ export function ContactsTable() {
     if (stage) params.set("stage", stage);
     if (tag) params.set("tag", tag);
 
-    const res = await fetch(`/api/contacts?${params}`);
-    const data = await res.json();
-    setContacts(data.contacts);
-    setPagination(data.pagination);
-    setLoading(false);
+    try {
+      const res = await fetch(`/api/contacts?${params}`);
+      if (!res.ok) throw new Error("Failed to fetch");
+      const data = await res.json();
+      setContacts(data.contacts);
+      setPagination(data.pagination);
+    } catch {
+      toast.error("Failed to load contacts");
+    } finally {
+      setLoading(false);
+    }
   }, [pagination.page, pagination.limit, search, stage, tag, sortBy, sortOrder]);
 
   useEffect(() => {
@@ -221,8 +227,11 @@ export function ContactsTable() {
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
-                      <DropdownMenuTrigger className="inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
+                      <DropdownMenuTrigger
+                        className="inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground h-8 w-8 p-0 cursor-pointer"
+                        aria-label={`Actions for ${contact.name}`}
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem

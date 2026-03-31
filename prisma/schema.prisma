@@ -1,0 +1,48 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Contact {
+  id             String   @id @default(cuid())
+  name           String
+  email          String   @unique
+  phone          String?
+  company        String?
+  lifecycleStage String   @default("lead") // lead, prospect, customer, churned
+  tags           String   @default("[]") // JSON array stored as string
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Segment {
+  id           String     @id @default(cuid())
+  name         String
+  description  String?
+  filters      String     @default("[]") // JSON rules stored as string
+  contactCount Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  campaigns    Campaign[]
+}
+
+model Campaign {
+  id        String   @id @default(cuid())
+  name      String
+  type      String   @default("email") // email, sms
+  status    String   @default("draft") // draft, active, completed
+  subject   String?
+  body      String?
+  segmentId String?
+  segment   Segment? @relation(fields: [segmentId], references: [id])
+  sentAt    DateTime?
+  opens     Int      @default(0)
+  clicks    Int      @default(0)
+  sent      Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

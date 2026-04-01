@@ -40,7 +40,9 @@ export function Sidebar() {
           </Link>
         )}
         {collapsed && (
-          <Megaphone className="mx-auto h-6 w-6 text-primary" />
+          <Link href="/dashboard">
+            <Megaphone className="mx-auto h-6 w-6 text-primary" />
+          </Link>
         )}
       </div>
 

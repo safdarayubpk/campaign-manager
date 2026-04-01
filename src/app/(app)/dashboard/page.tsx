@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/lib/prisma";
 import { Users, Megaphone, MailOpen, UserPlus } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/kpi-card";

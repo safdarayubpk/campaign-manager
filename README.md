@@ -2,6 +2,8 @@
 
 A full-stack CRM dashboard prototype built with Next.js 16, demonstrating contacts management, audience segmentation, and campaign workflows.
 
+**Live Demo**: [https://campaign-manager-flax.vercel.app](https://campaign-manager-flax.vercel.app)
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -9,9 +11,10 @@ A full-stack CRM dashboard prototype built with Next.js 16, demonstrating contac
 | Framework | Next.js 16 (App Router, Turbopack) |
 | Language | TypeScript |
 | Styling | Tailwind CSS v4 + shadcn/ui v4 |
-| Database | SQLite via Prisma v7 |
+| Database | SQLite (dev) / Turso LibSQL (prod) via Prisma v7 |
 | Validation | Zod |
 | Charts | Recharts |
+| Deployment | Vercel |
 
 ## Features
 
@@ -73,7 +76,7 @@ src/
 
 **`(app)` Route Group** — All pages share a sidebar layout without affecting URL paths. The route group pattern keeps `/dashboard` clean instead of `/app/dashboard`.
 
-**Prisma v7 with Adapter** — Uses `@prisma/adapter-better-sqlite3` instead of the legacy engine. The `prisma-client` generator outputs to `src/generated/prisma` and is gitignored.
+**Prisma v7 with Dual Adapter** — Uses `@prisma/adapter-better-sqlite3` for local development and `@prisma/adapter-libsql` for Turso in production. The adapter is selected at runtime based on environment variables. The `prisma-client` generator outputs to `src/generated/prisma` and is gitignored.
 
 **Shared Filter Logic** — `segment-filters.ts` exports a `buildWhereClause` function used by both the segments API and the count preview endpoint, keeping filter-to-Prisma translation DRY.
 
@@ -111,6 +114,18 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) — redirects to `/dashboard`.
+
+### Production (Turso)
+
+To deploy with Turso (LibSQL) for serverless environments like Vercel:
+
+```bash
+# Set environment variables
+TURSO_DATABASE_URL=libsql://your-db.turso.io
+TURSO_AUTH_TOKEN=your-token
+```
+
+When `TURSO_DATABASE_URL` is set, the app automatically uses the LibSQL adapter instead of SQLite.
 
 ## Scripts
 

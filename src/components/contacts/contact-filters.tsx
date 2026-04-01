@@ -66,7 +66,7 @@ export function ContactFilters({
         />
       </div>
 
-      <Select value={stage || "all"} onValueChange={(v) => onStageChange(v === "all" ? "" : v)}>
+      <Select value={stage || "all"} onValueChange={(v) => onStageChange(v === "all" ? "" : v ?? "")}>
         <SelectTrigger className="w-[160px]">
           <SelectValue placeholder="Stage" />
         </SelectTrigger>
@@ -79,7 +79,7 @@ export function ContactFilters({
         </SelectContent>
       </Select>
 
-      <Select value={tag || "all"} onValueChange={(v) => onTagChange(v === "all" ? "" : v)}>
+      <Select value={tag || "all"} onValueChange={(v) => onTagChange(v === "all" ? "" : v ?? "")}>
         <SelectTrigger className="w-[160px]">
           <SelectValue placeholder="Tag" />
         </SelectTrigger>

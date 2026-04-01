@@ -20,9 +20,10 @@ export async function PUT(
     const body = await request.json();
     const validated = updateSchema.parse(body);
 
+    const { tags, ...rest } = validated;
     const data = {
-      ...validated,
-      ...(validated.tags !== undefined && { tags: JSON.stringify(validated.tags) }),
+      ...rest,
+      ...(tags !== undefined && { tags: JSON.stringify(tags) }),
     };
 
     const contact = await prisma.contact.update({

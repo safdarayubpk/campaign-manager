@@ -165,7 +165,7 @@ export function CampaignForm() {
               <Label>Target Segment *</Label>
               <Select
                 value={form.segmentId}
-                onValueChange={(v) => setForm({ ...form, segmentId: v })}
+                onValueChange={(v) => setForm({ ...form, segmentId: v ?? "" })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a segment..." />

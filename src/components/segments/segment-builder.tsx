@@ -218,8 +218,8 @@ export function SegmentBuilder({ onSaved }: SegmentBuilderProps) {
 
               {filter.field === "lifecycleStage" ? (
                 <Select
-                  value={filter.value}
-                  onValueChange={(v) => updateRule(filter._id, { value: v })}
+                  value={filter.value || undefined}
+                  onValueChange={(v) => updateRule(filter._id, { value: v ?? "" })}
                 >
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Select..." />

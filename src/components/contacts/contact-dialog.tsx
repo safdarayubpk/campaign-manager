@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { Contact } from "@/lib/types";
+import type { Contact, LifecycleStage } from "@/lib/types";
 
 interface ContactDialogProps {
   open: boolean;
@@ -67,7 +67,7 @@ export function ContactDialog({
         email: form.email,
         phone: form.phone || null,
         company: form.company || null,
-        lifecycleStage: form.lifecycleStage,
+        lifecycleStage: form.lifecycleStage as LifecycleStage,
         tags: form.tags
           .split(",")
           .map((t) => t.trim())
@@ -125,7 +125,7 @@ export function ContactDialog({
             <Label htmlFor="stage">Lifecycle Stage</Label>
             <Select
               value={form.lifecycleStage}
-              onValueChange={(v) => setForm({ ...form, lifecycleStage: v })}
+              onValueChange={(v) => setForm({ ...form, lifecycleStage: v ?? "lead" })}
             >
               <SelectTrigger>
                 <SelectValue />

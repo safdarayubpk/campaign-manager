@@ -33,7 +33,7 @@ export async function PUT(
     return NextResponse.json({ ...contact, tags: JSON.parse(contact.tags) });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ errors: error.errors }, { status: 400 });
+      return NextResponse.json({ errors: error.issues }, { status: 400 });
     }
     return NextResponse.json({ error: "Failed to update contact" }, { status: 500 });
   }
